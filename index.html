@@ -147,9 +147,10 @@
           <label class="block text-xs font-semibold mb-1">PIN / Password</label>
           <input type="password" id="loginPin" placeholder="Masukkan PIN" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
         </div>
-        <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20">
-          Masuk ke Dashboard
-        </button>
+        <button type="submit" id="btnLoginSubmit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+  <span id="loginBtnText">Masuk ke Dashboard</span>
+  <span id="loginSpinner" class="spinner hidden"></span>
+</button>
       </form>
 
       <!-- Form Register -->
@@ -162,9 +163,10 @@
           <label class="block text-xs font-semibold mb-1">Buat PIN / Password</label>
           <input type="password" id="regPin" placeholder="Buat PIN Rahasia" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
         </div>
-        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20">
-          Buat Akun Baru
-        </button>
+        <button type="submit" id="btnRegSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
+  <span id="regBtnText">Buat Akun Baru</span>
+  <span id="regSpinner" class="spinner hidden"></span>
+</button>
       </form>
 
       <!-- Message Alert -->
@@ -394,39 +396,57 @@
       authMsg.classList.add('hidden');
     }
 
-    // Register User Baru
+    // Register User Baru (Dengan Efek Loading)
     registerForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const user = document.getElementById('regUser').value.trim().toLowerCase();
       const pin = document.getElementById('regPin').value;
 
-      if (users[user]) {
-        showAuthMsg('Username sudah terdaftar! Gunakan username lain.');
-        return;
-      }
+      document.getElementById('regBtnText').innerText = 'Mendaftarkan...';
+      document.getElementById('regSpinner').classList.remove('hidden');
 
-      users[user] = { pin: pin };
-      localStorage.setItem('bby_users_db', JSON.stringify(users));
-      showAuthMsg('Akun berhasil dibuat! Silakan masuk.', false);
-      registerForm.reset();
-      tabLogin.click();
+      setTimeout(() => {
+        document.getElementById('regBtnText').innerText = 'Buat Akun Baru';
+        document.getElementById('regSpinner').classList.add('hidden');
+
+        if (users[user]) {
+          showAuthMsg('Username sudah terdaftar! Gunakan username lain.');
+          return;
+        }
+
+        users[user] = { pin: pin };
+        localStorage.setItem('bby_users_db', JSON.stringify(users));
+        showAuthMsg('Akun berhasil dibuat! Silakan masuk.', false);
+        registerForm.reset();
+        tabLogin.click();
+      }, 800);
     });
 
-    // Login User
+    // Login User (Dengan Efek Loading & Animasi Fade-In)
     loginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const user = document.getElementById('loginUser').value.trim().toLowerCase();
       const pin = document.getElementById('loginPin').value;
 
-      if (!users[user] || users[user].pin !== pin) {
-        showAuthMsg('Username atau PIN salah!');
-        return;
-      }
+      document.getElementById('loginBtnText').innerText = 'Memverifikasi...';
+      document.getElementById('loginSpinner').classList.remove('hidden');
 
-      currentUser = user;
-      localStorage.setItem('bby_active_user', currentUser);
-      loginForm.reset();
-      initUserDashboard();
+      setTimeout(() => {
+        document.getElementById('loginBtnText').innerText = 'Masuk ke Dashboard';
+        document.getElementById('loginSpinner').classList.add('hidden');
+
+        if (!users[user] || users[user].pin !== pin) {
+          showAuthMsg('Username atau PIN salah!');
+          return;
+        }
+
+        currentUser = user;
+        localStorage.setItem('bby_active_user', currentUser);
+        loginForm.reset();
+
+        appScreen.classList.add('fade-in');
+        initUserDashboard();
+      }, 800);
     });
 
     // Logout
@@ -445,7 +465,6 @@
       authScreen.classList.add('hidden');
       appScreen.classList.remove('hidden');
 
-      // Ambil data transaksi user ini saja
       transactions = JSON.parse(localStorage.getItem(`bby_records_${currentUser}`)) || [];
       render();
     }
