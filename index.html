@@ -3,16 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- ================= META TAGS SEO ================= -->
+
+  <!-- ==================== META TAGS SEO ==================== -->
   <title>Financial Recording by bby Taztsuu</title>
-  <meta name="description" content="Aplikasi pencatatan keuangan Financial Recording by bby Taztsuu. Catat pemasukan, pengeluaran, rekap bulanan, dan ekspor data ke Excel dengan mudah dan aman.">
+  <meta name="description" content="Aplikasi pencatatan keuangan Financial Recording by bby Taztsuu. Catat pemasukan, pengeluaran, dan rekap bulanan secara rapi.">
   <meta name="keywords" content="financial recording by bby taztsuu, bby taztsuu, pencatatan keuangan, rekap bulanan">
   <meta name="author" content="bby Taztsuu">
-  <!-- ================================================= -->
 
   <!-- Tailwind CSS & FontAwesome -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Supabase Library (Unpkg CDN - Lebih Stabil & Tanpa Error Block) -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -31,315 +36,250 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Chart.js -->
+
+  <!-- Pustaka Tambahan: Chart.js & SheetJS (Excel Export) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS Library untuk Ekspor Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
-    .glass {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .dark .glass {
-      background: rgba(17, 24, 39, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out forwards;
     }
-    /* --- Tambahan CSS Animasi & Loading --- */
-/* Animasi Pindah Screen / Form */
-.fade-in {
-  animation: fadeIn 0.4s ease-in-out forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Spinner Loading Button */
-.spinner {
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  border-top: 3px solid #ffffff;
-  border-radius: 50%;
-  width: 18px;
-  height: 18px;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-  </style>
-</head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Financial Recording - bby Taztsuu</title>
-  <!-- Tailwind CSS & FontAwesome -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-            }
-          }
-        }
-      }
+    /* Loading Spinner */
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      width: 14px;
+      height: 14px;
+      animation: spin 0.8s linear infinite;
     }
-  </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- SheetJS Library untuk Ekspor Excel -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <style>
-    .glass {
-      background: rgba(255, 255, 255, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .dark .glass {
-      background: rgba(17, 24, 39, 0.7);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 transition-colors duration-300 min-h-screen">
 
-  <!-- ================= HALAMAN LOGIN / REGISTER ================= -->
-  <div id="authScreen" class="min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-8 shadow-2xl border border-gray-100 dark:border-gray-700 w-full max-w-md relative overflow-hidden">
-      
-      <!-- Header Auth -->
-      <div class="text-center mb-6">
-        <div class="inline-flex bg-brand-500 text-white p-3 rounded-2xl shadow-lg mb-3">
-          <i class="fa-solid fa-wallet text-2xl"></i>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen font-sans transition-colors duration-200">
+
+  <!-- ==================== HEADER & NAVBAR ==================== -->
+  <header class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 transition-colors">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="bg-brand-500 text-white p-2 rounded-xl shadow-md">
+          <i class="fa-solid fa-wallet text-xl"></i>
         </div>
-        <h2 class="text-xl font-bold">Financial Recording</h2>
-        <p class="text-xs text-brand-600 dark:text-brand-500 font-medium">by bby Taztsuu</p>
+        <div>
+          <h1 class="font-bold text-base leading-tight">Financial Recording</h1>
+          <p class="text-xs text-gray-400">by bby Taztsuu</p>
+        </div>
       </div>
 
-      <!-- Tab Switcher -->
-      <div class="flex border-b border-gray-200 dark:border-gray-700 mb-6">
-        <button id="tabLogin" class="w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500">Masuk</button>
-        <button id="tabRegister" class="w-1/2 py-2 font-bold text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">Daftar Akun</button>
+      <div class="flex items-center gap-3">
+        <button id="themeToggle" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition">
+          <i id="themeIcon" class="fa-solid fa-sun text-yellow-400"></i>
+        </button>
+        <button id="btnLogout" class="hidden text-xs bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 px-3 py-1.5 rounded-xl hover:bg-rose-100 font-medium transition">
+          <i class="fa-solid fa-right-from-bracket mr-1"></i> Keluar
+        </button>
       </div>
-
-      <!-- Form Login -->
-      <form id="loginForm" class="space-y-4">
-        <div>
-          <label class="block text-xs font-semibold mb-1">Username</label>
-          <input type="text" id="loginUser" placeholder="Masukkan Username" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold mb-1">PIN / Password</label>
-          <input type="password" id="loginPin" placeholder="Masukkan PIN" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-        </div>
-        <button type="submit" id="btnLoginSubmit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
-  <span id="loginBtnText">Masuk ke Dashboard</span>
-  <span id="loginSpinner" class="spinner hidden"></span>
-</button>
-      </form>
-
-      <!-- Form Register -->
-      <form id="registerForm" class="space-y-4 hidden">
-        <div>
-          <label class="block text-xs font-semibold mb-1">Username Baru</label>
-          <input type="text" id="regUser" placeholder="Contoh: taztsuu" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold mb-1">Buat PIN / Password</label>
-          <input type="password" id="regPin" placeholder="Buat PIN Rahasia" required class="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-        </div>
-        <button type="submit" id="btnRegSubmit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20 flex items-center justify-center gap-2">
-  <span id="regBtnText">Buat Akun Baru</span>
-  <span id="regSpinner" class="spinner hidden"></span>
-</button>
-      </form>
-
-      <!-- Message Alert -->
-      <p id="authMsg" class="text-xs text-center mt-4 hidden font-medium"></p>
     </div>
-  </div>
+  </header>
 
+  <!-- ==================== MAIN CONTAINER ==================== -->
+  <main class="max-w-5xl mx-auto px-4 py-6">
 
-  <!-- ================= HALAMAN DASHBOARD (UTAMA) ================= -->
-  <div id="appScreen" class="hidden">
-    
-    <!-- Navbar / Header -->
-    <header class="sticky top-0 z-50 glass border-b border-gray-200 dark:border-gray-800 px-4 py-3">
-      <div class="max-w-6xl mx-auto flex justify-between items-center">
-        <div class="flex items-center space-x-3">
-          <div class="bg-brand-500 text-white p-2 rounded-xl shadow-lg">
-            <i class="fa-solid fa-wallet text-xl"></i>
+    <!-- 1. HALAMAN AUTHENTICATION (LOGIN / REGISTER) -->
+    <section id="authScreen" class="max-w-md mx-auto my-8 fade-in">
+      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-xl">
+        
+        <!-- Tab Switcher -->
+        <div class="flex border-b border-gray-200 dark:border-gray-800 mb-6">
+          <button id="tabLogin" class="w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500">
+            Masuk
+          </button>
+          <button id="tabRegister" class="w-1/2 py-2 font-bold text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            Daftar
+          </button>
+        </div>
+
+        <!-- Form Login -->
+        <form id="loginForm" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-500">Username</label>
+            <input type="text" id="loginUser" required placeholder="Contoh: taztsuu" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
           </div>
           <div>
-            <h1 class="text-lg font-bold leading-tight">Financial Recording</h1>
-            <p class="text-xs text-brand-600 dark:text-brand-500 font-medium">Halo, <span id="displayUsername" class="font-bold underline">User</span>!</p>
+            <label class="block text-xs font-semibold mb-1 text-gray-500">PIN Akses</label>
+            <input type="password" id="loginPin" required placeholder="••••••" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
           </div>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button id="themeToggle" class="p-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 transition">
-            <i id="themeIcon" class="fa-solid fa-moon"></i>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md flex items-center justify-center gap-2">
+            <span id="loginBtnText">Masuk ke Dashboard</span>
+            <div id="loginSpinner" class="spinner hidden"></div>
           </button>
-          <button id="btnLogout" class="px-3 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition flex items-center gap-1">
-            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </form>
+
+        <!-- Form Register -->
+        <form id="registerForm" class="space-y-4 hidden">
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-500">Username Baru</label>
+            <input type="text" id="regUser" required placeholder="Pilih username unik" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1 text-gray-500">Buat PIN (Kerahasiaan)</label>
+            <input type="password" id="regPin" required placeholder="••••••" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+          </div>
+          <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-sm font-semibold transition shadow-md flex items-center justify-center gap-2">
+            <span id="regBtnText">Buat Akun Baru</span>
+            <div id="regSpinner" class="spinner hidden"></div>
           </button>
-        </div>
+        </form>
+
+        <div id="authMsg" class="text-xs text-center mt-4 font-medium hidden"></div>
       </div>
-    </header>
+    </section>
 
-    <!-- Container Utama -->
-    <main class="max-w-6xl mx-auto p-4 space-y-6">
-
-      <!-- Filter Rekap Bulanan -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-md border border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex items-center space-x-2">
-          <i class="fa-solid fa-calendar-days text-brand-500 text-lg"></i>
-          <span class="font-bold text-sm">Filter Rekap Bulanan:</span>
+    <!-- 2. HALAMAN UTAMA / DASHBOARD -->
+    <section id="appScreen" class="hidden space-y-6">
+      
+      <!-- Welcome Card -->
+      <div class="flex items-center justify-between bg-gradient-to-r from-brand-600 to-emerald-700 text-white p-5 rounded-2xl shadow-lg">
+        <div>
+          <p class="text-xs opacity-80">Selamat Datang Kembali,</p>
+          <h2 id="displayUsername" class="text-xl font-bold capitalize">User</h2>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <input type="month" id="monthPicker" class="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-          <button id="btnResetFilter" class="text-xs text-gray-500 hover:text-brand-500 underline">Semua Bulan</button>
-          <button id="btnExportExcel" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md transition">
-            <i class="fa-solid fa-file-excel"></i> Download Excel
-          </button>
-        </div>
+        <button id="btnExportExcel" class="text-xs bg-white/20 hover:bg-white/30 backdrop-blur-md px-3 py-2 rounded-xl font-medium transition flex items-center gap-1.5">
+          <i class="fa-solid fa-file-excel"></i> Export Excel
+        </button>
       </div>
 
-      <!-- Card Ringkasan Saldo -->
+      <!-- Ringkasan Keuangan (Kartu Status) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Total Saldo -->
-        <div class="bg-gradient-to-br from-emerald-500 to-teal-700 text-white rounded-2xl p-5 shadow-xl relative overflow-hidden">
-          <div class="absolute -right-4 -bottom-4 opacity-20 text-7xl">
-            <i class="fa-solid fa-scale-balanced"></i>
-          </div>
-          <p class="text-xs uppercase tracking-wider font-semibold opacity-80" id="saldoLabel">Total Saldo saat ini</p>
-          <h2 id="totalBalance" class="text-2xl md:text-3xl font-extrabold mt-1">Rp 0</h2>
-          <p class="text-xs mt-3 opacity-90"><i class="fa-solid fa-user-check mr-1"></i> Akun Akurat & Tersimpan di Perangkat</p>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+          <p class="text-xs text-gray-400 font-medium mb-1">Total Pemasukan</p>
+          <h3 id="totalIncome" class="text-xl font-bold text-emerald-500">Rp 0</h3>
         </div>
-
-        <!-- Total Pemasukan -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-100 dark:border-gray-700">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-gray-500 uppercase">Pemasukan</span>
-            <span class="p-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-lg"><i class="fa-solid fa-arrow-down"></i></span>
-          </div>
-          <h3 id="totalIncome" class="text-xl font-bold mt-2 text-emerald-600 dark:text-emerald-400">Rp 0</h3>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+          <p class="text-xs text-gray-400 font-medium mb-1">Total Pengeluaran</p>
+          <h3 id="totalExpense" class="text-xl font-bold text-rose-500">Rp 0</h3>
         </div>
-
-        <!-- Total Pengeluaran -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-100 dark:border-gray-700">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-gray-500 uppercase">Pengeluaran</span>
-            <span class="p-2 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-lg"><i class="fa-solid fa-arrow-up"></i></span>
-          </div>
-          <h3 id="totalExpense" class="text-xl font-bold mt-2 text-rose-600 dark:text-rose-400">Rp 0</h3>
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-4 rounded-2xl shadow-sm">
+          <p id="saldoLabel" class="text-xs text-gray-400 font-medium mb-1">Total Saldo</p>
+          <h3 id="totalBalance" class="text-xl font-bold text-brand-500">Rp 0</h3>
         </div>
       </div>
 
-      <!-- Form Input & Grafik -->
+      <!-- Section Form Input & Visualisasi Chart -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Form Input Transaction -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-100 dark:border-gray-700">
-          <h3 class="text-base font-bold mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-plus-circle text-brand-500"></i> Tambah Transaksi
+        <!-- Form Tambah Transaksi -->
+        <div class="lg:col-span-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+          <h3 class="font-bold text-sm mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-circle-plus text-brand-500"></i> Catat Transaksi Baru
           </h3>
+
           <form id="transactionForm" class="space-y-4">
-            <div>
-              <label class="block text-xs font-semibold mb-1">Tipe Transaksi</label>
-              <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btnIncome" class="py-2 rounded-xl text-xs font-semibold border border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">Pemasukan</button>
-                <button type="button" id="btnExpense" class="py-2 rounded-xl text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-500">Pengeluaran</button>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" id="btnIncome" class="py-2 rounded-xl text-xs font-semibold border border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30">
+                <i class="fa-solid fa-arrow-down-left mr-1"></i> Pemasukan
+              </button>
+              <button type="button" id="btnExpense" class="py-2 rounded-xl text-xs font-semibold border border-gray-300 dark:border-gray-600 text-gray-500">
+                <i class="fa-solid fa-arrow-up-right mr-1"></i> Pengeluaran
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Jumlah (Rp)</label>
+                <input type="number" id="amountInput" required placeholder="0" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Kategori</label>
+                <input type="text" id="categoryInput" required placeholder="Gaji, Makanan, Transport, dll" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
               </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold mb-1">Jumlah (Rp)</label>
-              <input type="number" id="amountInput" placeholder="Contoh: 50000" required class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Tanggal</label>
+                <input type="date" id="dateInput" required class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-1">Catatan Opsional</label>
+                <input type="text" id="noteInput" placeholder="Keterangan singkat" class="w-full px-3 py-2 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+              </div>
             </div>
 
-            <div>
-              <label class="block text-xs font-semibold mb-1">Kategori</label>
-              <input type="text" id="categoryInput" placeholder="Contoh: Makanan, Gaji, Liburan" required class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold mb-1">Tanggal</label>
-              <input type="date" id="dateInput" required class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold mb-1">Catatan (Opsional)</label>
-              <input type="text" id="noteInput" placeholder="Keterangan singkat" class="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-            </div>
-
-            <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-brand-500/20">
-              Simpan Transaksi
+            <button type="submit" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl text-sm transition shadow-md">
+              Simpan Transaksi ke Cloud
             </button>
           </form>
         </div>
 
-        <!-- Visualisasi Chart -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-100 dark:border-gray-700 flex flex-col justify-between">
-          <h3 class="text-base font-bold mb-4 flex items-center gap-2">
-            <i class="fa-solid fa-chart-pie text-brand-500"></i> Ringkasan Visual
+        <!-- Visualisasi Chart Bulanan -->
+        <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm flex flex-col justify-between">
+          <h3 class="font-bold text-sm mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-brand-500"></i> Diagram Rasio
           </h3>
-          <div class="relative w-full h-64 flex items-center justify-center">
+          <div class="relative w-full h-48 flex items-center justify-center">
             <canvas id="financeChart"></canvas>
+          </div>
+          <p class="text-[11px] text-gray-400 text-center mt-2">Perbandingan Pemasukan vs Pengeluaran</p>
+        </div>
+      </div>
+
+      <!-- Tabel Riwayat & Filter Bulanan -->
+      <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-5 rounded-2xl shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+          <h3 class="font-bold text-sm flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-brand-500"></i> Riwayat Transaksi
+          </h3>
+          
+          <div class="flex items-center gap-2">
+            <input type="month" id="monthPicker" class="px-3 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-transparent focus:outline-none focus:border-brand-500">
+            <button id="btnResetFilter" class="text-xs px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800">
+              Semua
+            </button>
+            <button id="btnClearAll" class="text-xs text-rose-500 hover:text-rose-600 px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-950">
+              Kosongkan
+            </button>
           </div>
         </div>
 
-      </div>
-
-      <!-- Tabel Riwayat Transaksi -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-md border border-gray-100 dark:border-gray-700">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-base font-bold flex items-center gap-2">
-            <i class="fa-solid fa-list-check text-brand-500"></i> Riwayat Transaksi
-          </h3>
-          <button id="btnClearAll" class="text-xs text-rose-500 hover:underline"><i class="fa-solid fa-trash mr-1"></i>Hapus Semua Data</button>
-        </div>
-
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-sm">
+          <table class="w-full text-left border-collapse">
             <thead>
-              <tr class="border-b border-gray-200 dark:border-gray-700 text-xs text-gray-500 uppercase">
-                <th class="py-3 px-2">Tanggal</th>
-                <th class="py-3 px-2">Kategori</th>
-                <th class="py-3 px-2">Catatan</th>
-                <th class="py-3 px-2 text-right">Jumlah</th>
-                <th class="py-3 px-2 text-center">Aksi</th>
+              <tr class="border-b border-gray-200 dark:border-gray-800 text-xs text-gray-400">
+                <th class="py-2 px-2 font-medium">Tanggal</th>
+                <th class="py-2 px-2 font-medium">Kategori</th>
+                <th class="py-2 px-2 font-medium">Catatan</th>
+                <th class="py-2 px-2 font-medium text-right">Jumlah</th>
+                <th class="py-2 px-2 font-medium text-center">Aksi</th>
               </tr>
             </thead>
-            <tbody id="transactionList">
+            <tbody id="transactionList" class="divide-y divide-gray-100 dark:divide-gray-800 text-xs">
               <!-- Data Transaksi dimasukkan via JS -->
             </tbody>
           </table>
         </div>
       </div>
 
-    </main>
-  </div>
+    </section>
+  </main>
 
+  <!-- ==================== SCRIPT UTAMA (SUPABASE CLOUD) ==================== -->
   <script>
-    // --- INISIALISASI SUPABASE ---
+    // --- INISIALISASI SUPABASE (SINTAKSIS AMAN & STABIL) ---
     const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
-    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    // Menggunakan variabel 'db' agar tidak terjadi bentrok nama variabel dengan pustaka utama
+    const { createClient } = supabase;
+    const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // System State
     let currentUser = localStorage.getItem('bby_active_user') || null;
@@ -368,12 +308,12 @@
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
 
-    // Default Date Settings
+    // Setting Default Tanggal
     dateInput.value = new Date().toISOString().split('T')[0];
     const now = new Date();
     monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    // --- FITUR AUTHENTICATION (SUPABASE) ---
+    // --- TAB SWITCHER LOGIC ---
     tabLogin.addEventListener('click', () => {
       tabLogin.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
       tabRegister.className = "w-1/2 py-2 font-bold text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300";
@@ -400,7 +340,7 @@
       authMsg.classList.add('hidden');
     }
 
-    // Register User ke Database Supabase
+    // --- FITUR REGISTER AKUN (SUPABASE CLOUD) ---
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = document.getElementById('regUser').value.trim().toLowerCase();
@@ -410,12 +350,12 @@
       document.getElementById('regSpinner').classList.remove('hidden');
 
       try {
-        // Cek apakah username sudah ada di tabel users
-        const { data: existingUser } = await supabase
+        // Cek ketersediaan username di tabel 'users'
+        const { data: existingUser } = await db
           .from('users')
           .select('*')
           .eq('username', user)
-          .single();
+          .maybeSingle();
 
         if (existingUser) {
           showAuthMsg('Username sudah terdaftar! Gunakan username lain.');
@@ -423,8 +363,8 @@
           return;
         }
 
-        // Simpan user baru ke Supabase
-        const { error } = await supabase
+        // Pendaftaran ke database cloud
+        const { error } = await db
           .from('users')
           .insert([{ username: user, pin: pin }]);
 
@@ -435,7 +375,7 @@
         tabLogin.click();
       } catch (err) {
         console.error(err);
-        showAuthMsg('Terjadi kesalahan saat mendaftar.');
+        showAuthMsg('Terjadi kesalahan saat mendaftar ke server.');
       } finally {
         resetRegButton();
       }
@@ -446,7 +386,7 @@
       document.getElementById('regSpinner').classList.add('hidden');
     }
 
-    // Login User dengan Verifikasi Supabase
+    // --- FITUR LOGIN (SUPABASE CLOUD) ---
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = document.getElementById('loginUser').value.trim().toLowerCase();
@@ -456,12 +396,12 @@
       document.getElementById('loginSpinner').classList.remove('hidden');
 
       try {
-        const { data: userData, error } = await supabase
+        const { data: userData, error } = await db
           .from('users')
           .select('*')
           .eq('username', user)
           .eq('pin', pin)
-          .single();
+          .maybeSingle();
 
         if (error || !userData) {
           showAuthMsg('Username atau PIN salah!');
@@ -477,7 +417,7 @@
         await initUserDashboard();
       } catch (err) {
         console.error(err);
-        showAuthMsg('Gagal terhubung ke server database.');
+        showAuthMsg('Gagal terhubung ke database server.');
       } finally {
         resetLoginButton();
       }
@@ -488,29 +428,31 @@
       document.getElementById('loginSpinner').classList.add('hidden');
     }
 
-    // Logout
+    // --- FITUR LOGOUT ---
     btnLogout.addEventListener('click', () => {
       localStorage.removeItem('bby_active_user');
       currentUser = null;
       transactions = [];
       appScreen.classList.add('hidden');
+      btnLogout.classList.add('hidden');
       authScreen.classList.remove('hidden');
     });
 
-    // Inisialisasi User Dashboard & Ambil Data dari Supabase
+    // --- INISIALISASI DASHBOARD & AMBIL DATA DARI SUPABASE ---
     async function initUserDashboard() {
       if (!currentUser) return;
 
       displayUsername.innerText = currentUser;
       authScreen.classList.add('hidden');
       appScreen.classList.remove('hidden');
+      btnLogout.classList.remove('hidden');
 
       await fetchTransactionsFromSupabase();
     }
 
     async function fetchTransactionsFromSupabase() {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('transactions')
           .select('*')
           .eq('username', currentUser)
@@ -520,11 +462,11 @@
         transactions = data || [];
         render();
       } catch (err) {
-        console.error('Gagal memuat transaksi:', err);
+        console.error('Gagal mengambil transaksi:', err);
       }
     }
 
-    // --- DASHBOARD LOGIC ---
+    // --- DASHBOARD LOGIC & RENDER ---
     btnIncome.addEventListener('click', () => {
       currentType = 'income';
       btnIncome.className = "py-2 rounded-xl text-xs font-semibold border border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30";
@@ -561,8 +503,8 @@
       let expenseSum = 0;
 
       filteredList.forEach((item) => {
-        if (item.type === 'income') incomeSum += item.amount;
-        if (item.type === 'expense') expenseSum += item.amount;
+        if (item.type === 'income') incomeSum += Number(item.amount);
+        if (item.type === 'expense') expenseSum += Number(item.amount);
 
         const tr = document.createElement('tr');
         tr.className = "border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition";
@@ -594,7 +536,7 @@
       render();
     });
 
-    // Tambah Transaksi ke Supabase
+    // SIMPAN TRANSAKSI KE SUPABASE CLOUD
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('amountInput').value);
@@ -612,7 +554,7 @@
       };
 
       try {
-        const { error } = await supabase
+        const { error } = await db
           .from('transactions')
           .insert([newTransaction]);
 
@@ -629,12 +571,12 @@
       }
     });
 
-    // Hapus Transaksi dari Supabase berdasarkan ID database
+    // HAPUS TRANSAKSI DARI SUPABASE CLOUD
     window.deleteTransaction = async function(id) {
-      if (!confirm('Hapus catatan transaksi ini?')) return;
+      if (!confirm('Hapus catatan transaksi ini dari database cloud?')) return;
 
       try {
-        const { error } = await supabase
+        const { error } = await db
           .from('transactions')
           .delete()
           .eq('id', id);
@@ -650,7 +592,7 @@
     document.getElementById('btnClearAll').addEventListener('click', async () => {
       if (confirm('Apakah Anda yakin ingin menghapus SELURUH catatan keuangan akun ini dari Cloud?')) {
         try {
-          const { error } = await supabase
+          const { error } = await db
             .from('transactions')
             .delete()
             .eq('username', currentUser);
@@ -664,6 +606,7 @@
       }
     });
 
+    // EXPORT EXCEL
     btnExportExcel.addEventListener('click', () => {
       const dataToExport = getFilteredTransactions();
       if (dataToExport.length === 0) {
@@ -690,6 +633,7 @@
       XLSX.writeFile(workbook, fileName);
     });
 
+    // REKAP CHART
     function updateChart(income, expense) {
       const ctx = document.getElementById('financeChart').getContext('2d');
       if (myChart) myChart.destroy();
@@ -712,7 +656,7 @@
       });
     }
 
-    // Cek status sesi login saat halaman dimuat
+    // CEK SESI LOGIN AKTIF
     if (currentUser) {
       initUserDashboard();
     }
