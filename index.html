@@ -336,9 +336,13 @@
   </div>
 
   <script>
+    // --- INISIALISASI SUPABASE ---
+    const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // System State
     let currentUser = localStorage.getItem('bby_active_user') || null;
-    let users = JSON.parse(localStorage.getItem('bby_users_db')) || {};
     let transactions = [];
     let currentType = 'income';
     let myChart = null;
@@ -369,7 +373,7 @@
     const now = new Date();
     monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-    // --- FITUR AUTHENTICATION ---
+    // --- FITUR AUTHENTICATION (SUPABASE) ---
     tabLogin.addEventListener('click', () => {
       tabLogin.className = "w-1/2 py-2 font-bold text-sm border-b-2 border-brand-500 text-brand-500";
       tabRegister.className = "w-1/2 py-2 font-bold text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300";
@@ -396,8 +400,8 @@
       authMsg.classList.add('hidden');
     }
 
-    // Register User Baru (Dengan Efek Loading)
-    registerForm.addEventListener('submit', (e) => {
+    // Register User ke Database Supabase
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = document.getElementById('regUser').value.trim().toLowerCase();
       const pin = document.getElementById('regPin').value;
@@ -405,25 +409,45 @@
       document.getElementById('regBtnText').innerText = 'Mendaftarkan...';
       document.getElementById('regSpinner').classList.remove('hidden');
 
-      setTimeout(() => {
-        document.getElementById('regBtnText').innerText = 'Buat Akun Baru';
-        document.getElementById('regSpinner').classList.add('hidden');
+      try {
+        // Cek apakah username sudah ada di tabel users
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('*')
+          .eq('username', user)
+          .single();
 
-        if (users[user]) {
+        if (existingUser) {
           showAuthMsg('Username sudah terdaftar! Gunakan username lain.');
+          resetRegButton();
           return;
         }
 
-        users[user] = { pin: pin };
-        localStorage.setItem('bby_users_db', JSON.stringify(users));
-        showAuthMsg('Akun berhasil dibuat! Silakan masuk.', false);
+        // Simpan user baru ke Supabase
+        const { error } = await supabase
+          .from('users')
+          .insert([{ username: user, pin: pin }]);
+
+        if (error) throw error;
+
+        showAuthMsg('Akun berhasil dibuat di Cloud! Silakan masuk.', false);
         registerForm.reset();
         tabLogin.click();
-      }, 800);
+      } catch (err) {
+        console.error(err);
+        showAuthMsg('Terjadi kesalahan saat mendaftar.');
+      } finally {
+        resetRegButton();
+      }
     });
 
-    // Login User (Dengan Efek Loading & Animasi Fade-In)
-    loginForm.addEventListener('submit', (e) => {
+    function resetRegButton() {
+      document.getElementById('regBtnText').innerText = 'Buat Akun Baru';
+      document.getElementById('regSpinner').classList.add('hidden');
+    }
+
+    // Login User dengan Verifikasi Supabase
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const user = document.getElementById('loginUser').value.trim().toLowerCase();
       const pin = document.getElementById('loginPin').value;
@@ -431,12 +455,17 @@
       document.getElementById('loginBtnText').innerText = 'Memverifikasi...';
       document.getElementById('loginSpinner').classList.remove('hidden');
 
-      setTimeout(() => {
-        document.getElementById('loginBtnText').innerText = 'Masuk ke Dashboard';
-        document.getElementById('loginSpinner').classList.add('hidden');
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('username', user)
+          .eq('pin', pin)
+          .single();
 
-        if (!users[user] || users[user].pin !== pin) {
+        if (error || !userData) {
           showAuthMsg('Username atau PIN salah!');
+          resetLoginButton();
           return;
         }
 
@@ -445,28 +474,54 @@
         loginForm.reset();
 
         appScreen.classList.add('fade-in');
-        initUserDashboard();
-      }, 800);
+        await initUserDashboard();
+      } catch (err) {
+        console.error(err);
+        showAuthMsg('Gagal terhubung ke server database.');
+      } finally {
+        resetLoginButton();
+      }
     });
+
+    function resetLoginButton() {
+      document.getElementById('loginBtnText').innerText = 'Masuk ke Dashboard';
+      document.getElementById('loginSpinner').classList.add('hidden');
+    }
 
     // Logout
     btnLogout.addEventListener('click', () => {
       localStorage.removeItem('bby_active_user');
       currentUser = null;
+      transactions = [];
       appScreen.classList.add('hidden');
       authScreen.classList.remove('hidden');
     });
 
-    // Inisialisasi User Dashboard
-    function initUserDashboard() {
+    // Inisialisasi User Dashboard & Ambil Data dari Supabase
+    async function initUserDashboard() {
       if (!currentUser) return;
 
       displayUsername.innerText = currentUser;
       authScreen.classList.add('hidden');
       appScreen.classList.remove('hidden');
 
-      transactions = JSON.parse(localStorage.getItem(`bby_records_${currentUser}`)) || [];
-      render();
+      await fetchTransactionsFromSupabase();
+    }
+
+    async function fetchTransactionsFromSupabase() {
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('username', currentUser)
+          .order('date', { ascending: false });
+
+        if (error) throw error;
+        transactions = data || [];
+        render();
+      } catch (err) {
+        console.error('Gagal memuat transaksi:', err);
+      }
     }
 
     // --- DASHBOARD LOGIC ---
@@ -498,10 +553,6 @@
     }
 
     function render() {
-      if (currentUser) {
-        localStorage.setItem(`bby_records_${currentUser}`, JSON.stringify(transactions));
-      }
-
       const filteredList = getFilteredTransactions();
       const list = document.getElementById('transactionList');
       list.innerHTML = '';
@@ -510,8 +561,6 @@
       let expenseSum = 0;
 
       filteredList.forEach((item) => {
-        const originalIndex = transactions.indexOf(item);
-
         if (item.type === 'income') incomeSum += item.amount;
         if (item.type === 'expense') expenseSum += item.amount;
 
@@ -525,7 +574,7 @@
             ${item.type === 'income' ? '+' : '-'} ${formatRupiah(item.amount)}
           </td>
           <td class="py-3 px-2 text-center">
-            <button onclick="deleteTransaction(${originalIndex})" class="text-gray-400 hover:text-rose-500"><i class="fa-solid fa-trash-can"></i></button>
+            <button onclick="deleteTransaction('${item.id}')" class="text-gray-400 hover:text-rose-500"><i class="fa-solid fa-trash-can"></i></button>
           </td>
         `;
         list.appendChild(tr);
@@ -545,30 +594,73 @@
       render();
     });
 
-    form.addEventListener('submit', (e) => {
+    // Tambah Transaksi ke Supabase
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('amountInput').value);
       const category = document.getElementById('categoryInput').value;
       const date = document.getElementById('dateInput').value;
       const note = document.getElementById('noteInput').value;
 
-      transactions.unshift({ type: currentType, amount, category, date, note });
-      form.reset();
-      dateInput.value = new Date().toISOString().split('T')[0];
-      monthPicker.value = date.substring(0, 7);
+      const newTransaction = {
+        username: currentUser,
+        type: currentType,
+        amount: amount,
+        category: category,
+        date: date,
+        note: note
+      };
 
-      render();
+      try {
+        const { error } = await supabase
+          .from('transactions')
+          .insert([newTransaction]);
+
+        if (error) throw error;
+
+        form.reset();
+        dateInput.value = new Date().toISOString().split('T')[0];
+        monthPicker.value = date.substring(0, 7);
+
+        await fetchTransactionsFromSupabase();
+      } catch (err) {
+        console.error('Gagal menyimpan transaksi:', err);
+        alert('Gagal menyimpan transaksi ke server.');
+      }
     });
 
-    window.deleteTransaction = function(index) {
-      transactions.splice(index, 1);
-      render();
+    // Hapus Transaksi dari Supabase berdasarkan ID database
+    window.deleteTransaction = async function(id) {
+      if (!confirm('Hapus catatan transaksi ini?')) return;
+
+      try {
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        await fetchTransactionsFromSupabase();
+      } catch (err) {
+        console.error('Gagal menghapus:', err);
+        alert('Gagal menghapus transaksi dari server.');
+      }
     };
 
-    document.getElementById('btnClearAll').addEventListener('click', () => {
-      if (confirm('Apakah Anda yakin ingin menghapus seluruh catatan keuangan akun ini?')) {
-        transactions = [];
-        render();
+    document.getElementById('btnClearAll').addEventListener('click', async () => {
+      if (confirm('Apakah Anda yakin ingin menghapus SELURUH catatan keuangan akun ini dari Cloud?')) {
+        try {
+          const { error } = await supabase
+            .from('transactions')
+            .delete()
+            .eq('username', currentUser);
+
+          if (error) throw error;
+          await fetchTransactionsFromSupabase();
+        } catch (err) {
+          console.error(err);
+          alert('Gagal mengosongkan data.');
+        }
       }
     });
 
@@ -620,7 +712,7 @@
       });
     }
 
-    // Cek status Sesi Login saat halaman dimuat
+    // Cek status sesi login saat halaman dimuat
     if (currentUser) {
       initUserDashboard();
     }
