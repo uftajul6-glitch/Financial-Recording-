@@ -339,7 +339,7 @@
     // --- INISIALISASI SUPABASE ---
     const SUPABASE_URL = 'https://mlsvsfedblnazhiitacw.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_RffE_kjkKOX4JAhvlaYIBw_x3jRkyir';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // System State
     let currentUser = localStorage.getItem('bby_active_user') || null;
